@@ -1,0 +1,13 @@
+[package]
+name = "simulator"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+futures = "0.3"
+color-eyre = "0.6.3"
+common = { path = "../common" }
+bytemuck = "1.16.1"
+num = "0.4.3"
+rayon = "1.10.0"
+async-rayon = "0.1.0"

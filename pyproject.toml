@@ -1,0 +1,41 @@
+[project]
+name = "coordinated"
+version = "0.1.0"
+description = "Add your description here"
+authors = [
+    { name = "Arvin Kushwaha", email = "arvin.singh.kushwaha@gmail.com" }
+]
+dependencies = [
+    "jax>=0.4.30",
+    "jaximal @ git+https://github.com/ArvinSKushwaha/jaximal.git",
+    "jaxlib[cuda12_pip] @ https://storage.googleapis.com/jax-releases/cuda12/jaxlib-0.4.28+cuda12.cudnn89-cp312-cp312-manylinux2014_x86_64.whl",
+]
+readme = "README.md"
+requires-python = ">= 3.12"
+license = { text = "MIT" }
+
+[tool.rye]
+managed = true
+virtual = true
+dev-dependencies = []
+
+[tool.ruff]
+target-version = "py312"
+
+[tool.ruff.lint.isort]
+lines-between-types = 1
+relative-imports-order = "closest-to-furthest"
+
+[tool.ruff.format]
+quote-style = "single"
+docstring-code-format = true
+
+[tool.basedpyright]
+typeCheckingMode = "strict"
+reportMissingTypeStubs = false
+reportUnknownParameterType = false
+reportUnknownArgumentType = false
+reportUnknownMemberType = false
+reportUnknownVariableType = false
+reportUnknownLambdaType = false
+reportUntypedFunctionDecorator = false

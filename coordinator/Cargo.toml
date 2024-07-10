@@ -1,0 +1,11 @@
+[package]
+name = "coordinator"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+futures = "0.3"
+common = { path = "../common" }
+driver = { path = "../driver" }
+generator = { path = "../generator" }
+simulator = { path = "../simulator" }
