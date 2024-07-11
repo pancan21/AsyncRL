@@ -9,3 +9,6 @@ common = { path = "../common" }
 driver = { path = "../driver" }
 generator = { path = "../generator" }
 simulator = { path = "../simulator" }
+state_estimator = { path = "../state_estimator" }
+num = "0.4"
+bytemuck = "1"

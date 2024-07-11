@@ -3,6 +3,7 @@ use num::Float;
 
 use crate::vector::Vector;
 
+#[derive(Debug, Clone)]
 pub struct SimulationState<T: Float + Pod, const DIMS: usize> {
     pub time: T,
     pub size: usize,
@@ -11,6 +12,20 @@ pub struct SimulationState<T: Float + Pod, const DIMS: usize> {
     pub position: Box<[Vector<T, DIMS>]>,
     pub velocity: Box<[Vector<T, DIMS>]>,
     pub acceleration: Box<[Vector<T, DIMS>]>,
+}
+
+impl<T: Float + Pod, const DIMS: usize> Default for SimulationState<T, DIMS> {
+    fn default() -> Self {
+        Self {
+            time: T::zero(),
+            size: 0,
+            stiffness: T::zero(),
+            origin_stiffness: T::zero(),
+            position: Box::new([]),
+            velocity: Box::new([]),
+            acceleration: Box::new([]),
+        }
+    }
 }
 
 pub struct ObservableSimulationState<T: Float + Pod, const DIMS: usize> {

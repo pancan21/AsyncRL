@@ -1,20 +1,19 @@
-use pyo3::prelude::PyAnyMethods;
 use std::marker::PhantomData;
 
-use common::{interfaces::DriverInterface, python::set_venv_site_packages};
+use common::{interfaces::StatePredictionInterface, python::set_venv_site_packages};
 use pyo3::{
-    types::{IntoPyDict, PyDict, PyModule},
+    types::{IntoPyDict, PyAnyMethods, PyDict, PyModule},
     Py, PyAny, PyResult, Python,
 };
 use tqdm::Iter;
 
-pub struct PythonDriver<T, const DIMS: usize> {
+pub struct PythonStatePredictor<T, const DIMS: usize> {
     globals: Py<PyDict>,
     locals: Py<PyDict>,
     _phantom: PhantomData<[T; DIMS]>,
 }
 
-impl<T, const DIMS: usize> PythonDriver<T, DIMS> {
+impl<T, const DIMS: usize> PythonStatePredictor<T, DIMS> {
     pub fn new() -> Self {
         pyo3::prepare_freethreaded_python();
 
@@ -65,16 +64,16 @@ impl<T, const DIMS: usize> PythonDriver<T, DIMS> {
     }
 }
 
-impl<T, const DIMS: usize> DriverInterface<T, DIMS> for PythonDriver<T, DIMS> {
-    async fn compute_controls(
-        &self,
-        state_estimate: common::messages::StateTensor<T, DIMS>,
-    ) -> common::messages::ControlParameterStateOwned<T, DIMS> {
+impl<T, const DIMS: usize> StatePredictionInterface<T, DIMS> for PythonStatePredictor<T, DIMS> {
+    async fn predict_state(
+        &mut self,
+        observation: [common::messages::Observation<'_, T, DIMS>; common::messages::DELAY_DEPTH],
+    ) -> common::messages::StateTensor<T, DIMS> {
         todo!()
     }
 }
 
-impl<T, const DIMS: usize> Default for PythonDriver<T, DIMS> {
+impl<T, const DIMS: usize> Default for PythonStatePredictor<T, DIMS> {
     fn default() -> Self {
         Self::new()
     }

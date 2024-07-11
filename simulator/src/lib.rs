@@ -13,6 +13,42 @@ pub struct RustSimulator<T: bytemuck::Pod + num::Float, const DIMS: usize> {
     offset: usize,
 }
 
+fn double_index_sorted<T>(arr: &[T], i1: usize, i2: usize) -> (&T, &T) {
+    debug_assert!(i1 < i2);
+    let (a, b) = arr.split_at(i2);
+
+    (&a[i1], &b[0])
+}
+
+fn double_index_sorted_mut<T>(arr: &mut [T], i1: usize, i2: usize) -> (&mut T, &mut T) {
+    debug_assert!(i1 < i2);
+    let (a, b) = arr.split_at_mut(i2);
+
+    (&mut a[i1], &mut b[0])
+}
+
+fn double_index<T>(arr: &[T], i1: usize, i2: usize) -> (&T, &T) {
+    if i1 < i2 {
+        double_index_sorted(arr, i1, i2)
+    } else if i1 > i2 {
+        let (a, b) = double_index_sorted(arr, i2, i1);
+        (b, a)
+    } else {
+        panic!("Expected `i1` != `i2`, but {i1} = i1 = i2 = {i2}");
+    }
+}
+
+fn double_index_mut<T>(arr: &mut [T], i1: usize, i2: usize) -> (&mut T, &mut T) {
+    if i1 < i2 {
+        double_index_sorted_mut(arr, i1, i2)
+    } else if i1 > i2 {
+        let (a, b) = double_index_sorted_mut(arr, i2, i1);
+        (b, a)
+    } else {
+        panic!("Expected `i1` != `i2`, but {i1} = i1 = i2 = {i2}");
+    }
+}
+
 fn borrow<T: bytemuck::Pod + num::Float, const DIMS: usize>(
     sim: &RustSimulator<T, DIMS>,
     i: usize,
@@ -42,7 +78,7 @@ impl<T: bytemuck::Pod + num::Float, const DIMS: usize> RustSimulator<T, DIMS> {
     }
 }
 
-impl<T: bytemuck::Pod + num::Float, const DIMS: usize> SimulatorInterface<T, DIMS>
+impl<T: bytemuck::Pod + num::Float + Send + Sync, const DIMS: usize> SimulatorInterface<T, DIMS>
     for RustSimulator<T, DIMS>
 {
     async fn get_observations<'a>(&'a self) -> [Observation<'a, T, DIMS>; DELAY_DEPTH]
@@ -54,9 +90,24 @@ impl<T: bytemuck::Pod + num::Float, const DIMS: usize> SimulatorInterface<T, DIM
 
     async fn update(&mut self, dt: T) {
         let next_offset = (self.offset + 1) % (DELAY_DEPTH + 1);
+        let (tx, rx) = futures::channel::oneshot::channel();
 
-        async_rayon::spawn(|| {}).await;
-        todo!("update!");
+        rayon::scope(|s| {
+            let (current_state, next_state) =
+                double_index_mut(&mut self.simulation_states, self.offset, next_offset);
+
+            s.spawn(move |_| {
+                Self::par_update_position(current_state, dt);
+                Self::par_compute_forces(current_state, &mut next_state.acceleration);
+                Self::par_update_velocity(current_state, dt, &next_state.acceleration);
+                Self::update_time(current_state, next_state, dt);
+            });
+
+            tx.send(()).unwrap()
+        });
+
+        rx.await.unwrap();
+        self.offset += 1;
     }
 
     fn get_time(&self) -> T {
@@ -73,7 +124,7 @@ impl<T: bytemuck::Pod + num::Float, const DIMS: usize> RustSimulator<T, DIMS> {
     }
 
     fn par_compute_forces(
-        state: &mut SimulationState<T, DIMS>,
+        state: &SimulationState<T, DIMS>,
         tmp_acceleration: &mut Box<[Vector<T, DIMS>]>,
     ) where
         T: Send + Sync,
@@ -165,8 +216,12 @@ impl<T: bytemuck::Pod + num::Float, const DIMS: usize> RustSimulator<T, DIMS> {
         });
     }
 
-    fn update_time(state: &mut SimulationState<T, DIMS>, dt: T) {
-        state.time = state.time + dt;
+    fn update_time(
+        state: &SimulationState<T, DIMS>,
+        next_state: &mut SimulationState<T, DIMS>,
+        dt: T,
+    ) {
+        next_state.time = state.time + dt;
     }
 
     fn update_velocity(
@@ -193,7 +248,7 @@ impl<T: bytemuck::Pod + num::Float, const DIMS: usize> RustSimulator<T, DIMS> {
     fn par_update_velocity(
         state: &mut SimulationState<T, DIMS>,
         dt: T,
-        tmp_acceleration: &mut Box<[Vector<T, DIMS>]>,
+        tmp_acceleration: &[Vector<T, DIMS>],
     ) where
         T: Send + Sync,
     {

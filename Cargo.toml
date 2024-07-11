@@ -1,4 +1,4 @@
 [workspace]
-members = ["simulator", "driver", "generator", "common", "coordinator"]
+members = ["simulator", "driver", "generator", "common", "coordinator", "state_estimator"]
 resolver = "2"
 

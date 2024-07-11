@@ -1,3 +1,5 @@
+use std::marker::PhantomData;
+
 use crate::{simulation::SimulationConfig, vector::Vector};
 
 /// The number of dimensions of the latent embedding of the system state.
@@ -18,7 +20,27 @@ pub struct StateTensor<T, const DIMS: usize> {
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 #[repr(C)]
 /// The control parameters output by our driver to be fed into our generator.
-pub struct ControlParameterState<'a, T>(pub &'a [T]);
+pub struct ControlParameterState<'a, T, const DIMS: usize>(pub &'a [T], PhantomData<[T; DIMS]>);
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+#[repr(C)]
+/// The control parameters output by our driver to be fed into our generator.
+pub struct ControlParameterStateOwned<T, const DIMS: usize>(pub Vec<T>, PhantomData<[T; DIMS]>);
+
+impl<'a, T: num::Float + bytemuck::Pod, const DIMS: usize> ControlParameterState<'a, T, DIMS> {
+    pub fn new<'b: 'a>(data: &'b [T]) -> Self {
+        Self(data, PhantomData)
+    }
+
+    pub fn new_vec(config: SimulationConfig<T, DIMS>) -> Vec<T> {
+        vec![T::zero(); config.size * 4 - 4]
+    }
+}
+impl<T: num::Float + bytemuck::Pod, const DIMS: usize> ControlParameterStateOwned<T, DIMS> {
+    pub fn new(data: Vec<T>) -> Self {
+        Self(data, PhantomData)
+    }
+}
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 #[repr(C)]
