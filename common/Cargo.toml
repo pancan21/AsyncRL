@@ -4,10 +4,11 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-bytemuck = { version = "1.16.1", features = ["derive", "min_const_generics"] }
+bytemuck = { version = "1", features = ["derive", "min_const_generics"] }
 thiserror = "1"
 num = "0.4.3"
 paste = "1.0.15"
 itertools = "0.13.0"
-pyo3 = { version ="0.22", features = ["auto-initialize"]}
+pyo3 = { version ="0.22", features = ["abi3-py312"]}
 indoc = "2"
+log = "0.4"

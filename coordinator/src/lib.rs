@@ -1,81 +1,63 @@
-use std::marker::PhantomData;
+#![forbid(
+    missing_docs,
+    clippy::missing_assert_message,
+    clippy::missing_docs_in_private_items,
+    clippy::missing_asserts_for_indexing,
+    clippy::missing_panics_doc
+)]
+//! This module ties together all the interfaces into an experiment.
 
-use bytemuck::Pod;
 use common::{
     interfaces::{
         DriverInterface, GeneratorInterface, SimulatorInterface, StatePredictionInterface,
     },
-    messages::ControlParameterState,
+    system::System,
+    Float,
 };
 use futures::FutureExt;
-use num::Float;
 
-#[derive(Debug, Copy, Clone, PartialEq, Eq)]
-pub struct ExperimentConfig<T: Float + Pod, const DIMS: usize> {
-    dt: T,
-    _phantom: PhantomData<[T; DIMS]>,
-}
-
-impl<T: Float + Pod, const DIMS: usize> ExperimentConfig<T, DIMS> {
-    pub fn build() -> ExperimentConfigBuilder<T, DIMS> {
-        ExperimentConfigBuilder {
-            dt: None,
-            _phantom: PhantomData,
-        }
-    }
-}
-
-pub struct ExperimentConfigBuilder<T: Float + Pod, const DIMS: usize> {
-    dt: Option<T>,
-    _phantom: PhantomData<[T; DIMS]>,
-}
-
-impl<T: Float + Pod, const DIMS: usize> ExperimentConfigBuilder<T, DIMS> {
-    pub fn dt(mut self, dt: T) -> Self {
-        self.dt.replace(dt);
-
-        self
-    }
-    pub fn finalize(self) -> ExperimentConfig<T, DIMS> {
-        ExperimentConfig {
-            dt: self.dt.unwrap_or(T::zero()),
-            _phantom: PhantomData,
-        }
-    }
-}
-
+/// Given a system type, and some [`DriverInterface`], [`GeneratorInterface`],
+/// [`SimulatorInterface`], and [`StatePredictionInterface`] implementors (along with a timestep),
+/// the experiment control cycle is run.
 pub async fn experiment<
-    T: Float + Pod,
-    D: DriverInterface<T, DIMS>,
-    G: GeneratorInterface<T, DIMS>,
-    S: SimulatorInterface<T, DIMS>,
-    SP: StatePredictionInterface<T, DIMS>,
-    const DIMS: usize,
+    T: Float,
+    S: System<T>,
+    D: DriverInterface<T, S>,
+    G: GeneratorInterface<T, S>,
+    SIM: SimulatorInterface<T, S>,
+    SP: StatePredictionInterface<T, S>,
 >(
     driver: D,
     mut generator: G,
-    mut simulator: S,
+    mut simulator: SIM,
     mut state_predictor: SP,
-    experiment_config: ExperimentConfig<T, DIMS>,
+    dt: T,
+    // TODO: Add some customizable target dynamics into this experiment code.
+    // Maybe by means of some given target dynamics loss function?
 ) {
     let mut current_query = None;
     let mut in_progress = None;
-    let future_in_progress = |query| driver.compute_controls(query);
+    let future_in_progress = |query| Box::pin(driver.compute_controls(query).fuse());
 
     loop {
         let observations = simulator.get_observations().await;
 
-        let current_state_estimate = state_predictor.predict_state(observations).await;
+        let current_state_estimate = state_predictor.predict_state(&observations).await;
         current_query.replace(current_state_estimate);
 
-        if let Some(current_query) = current_query.take() {
-            in_progress.replace(future_in_progress(current_query));
+        if in_progress.is_none() {
+            if let Some(current_query) = current_query.take() {
+                in_progress.replace(future_in_progress(current_query));
+            }
         }
 
-        if let Some(in_progress) = in_progress.take() {
+        if let Some(mut in_progress_future) = in_progress.take() {
+            let signal = generator.control_signal(simulator.get_time());
             futures::select! {
-                controls = in_progress.fuse() => generator.set_parameters(ControlParameterState::new(&controls.0), simulator.get_time()).await,
-                _ = simulator.update(experiment_config.dt).fuse() => {},
+                controls = in_progress_future => generator.set_parameters(controls, simulator.get_time()).await,
+                _ = simulator.update(dt, &signal).fuse() => {
+                    in_progress.replace(in_progress_future);
+                },
             };
         }
     }

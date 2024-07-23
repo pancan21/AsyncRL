@@ -1,47 +1,36 @@
 #![allow(async_fn_in_trait)]
 
-use crate::messages::{
-    ControlParameterState, ControlParameterStateOwned, ControlSignalState, Observation,
-    StateTensor, DELAY_DEPTH,
-};
+use crate::{system::System, Float};
 
 /// The interface for an agent driving our dynamical system.
-pub trait DriverInterface<T, const DIMS: usize> {
+pub trait DriverInterface<T: Float, S: System<T>> {
     /// For a state estimate, computes the control parameters that should be associated with it.
-    async fn compute_controls(
-        &self,
-        state_estimate: StateTensor<T, DIMS>,
-    ) -> ControlParameterStateOwned<T, DIMS>;
+    async fn compute_controls(&self, state_estimate: S::LatentState) -> S::ControlParams;
 }
 
 /// The interface for an agent driving our dynamical system.
-pub trait GeneratorInterface<T, const DIMS: usize> {
+pub trait GeneratorInterface<T: Float, S: System<T>> {
     /// Sets the parameters that is used for generating the signals.
-    async fn set_parameters(&mut self, controls: ControlParameterState<T, DIMS>, time: T);
+    async fn set_parameters(&mut self, controls: S::ControlParams, time: T);
 
-    /// Gets the control parameter for the signal at the given time.
-    fn control_parameters(&mut self, time: T) -> ControlSignalState<T, DIMS>;
+    /// Gets the control signal at the given time.
+    fn control_signal(&mut self, time: T) -> S::ControlSignal;
 }
 
 /// The interface for a simulator for our system.
-pub trait SimulatorInterface<T, const DIMS: usize> {
-    /// Gets the last [`DELAY_DEPTH`] collection of observed states.
-    async fn get_observations<'a>(&'a self) -> [Observation<'a, T, DIMS>; DELAY_DEPTH]
-    where
-        T: 'a;
+pub trait SimulatorInterface<T: Float, S: System<T>> {
+    /// Gets the last `DELAY_DEPTH` collection of observed states.
+    async fn get_observations(&self) -> Vec<S::SystemObservation>;
 
     /// Updates the state of the system by the given timestep.
-    async fn update(&mut self, dt: T);
+    async fn update(&mut self, dt: T, control_signal: &S::ControlSignal);
 
     /// Gets the current time of the system state.
     fn get_time(&self) -> T;
 }
 
 /// The interface for predicting the full state of the system (in some latent space).
-pub trait StatePredictionInterface<T, const DIMS: usize> {
+pub trait StatePredictionInterface<T: Float, S: System<T>> {
     /// Given a series of observations, predict the full state of the system.
-    async fn predict_state(
-        &mut self,
-        observation: [Observation<T, DIMS>; DELAY_DEPTH],
-    ) -> StateTensor<T, DIMS>;
+    async fn predict_state(&mut self, observation: &[S::SystemObservation]) -> S::LatentState;
 }

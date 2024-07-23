@@ -1,0 +1,12 @@
+[package]
+name = "dummy_system"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+common = { path = "../common" }
+smol = "2"
+coordinator = { path = "../coordinator" }
+futures = "0.3"
+async-std = "1.12"
+colored = "2.1.0"
