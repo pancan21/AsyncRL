@@ -73,7 +73,7 @@ pub struct TrivialSystemAgent {
 pub struct TrivialSystemStatePredictor;
 
 impl SimulatorInterface<f64, TrivialSystem> for TrivialSystemSimulator {
-    async fn update(&mut self, dt: f64, _control_signal: &()) {
+    async fn update(&mut self, _system: &TrivialSystem, dt: f64, _control_signal: &()) {
         println!("{}", "TrivialSystemSimulator::update".green());
         let new_time = self.get_time() + dt;
         let mut state = self.states.pop_front().unwrap();
@@ -91,6 +91,10 @@ impl SimulatorInterface<f64, TrivialSystem> for TrivialSystemSimulator {
     async fn get_observations(&self) -> Vec<<TrivialSystem as System<f64>>::SystemObservation> {
         println!("TrivialSystemSimulator::get_observations");
         self.states.iter().map(|i| i.time).collect()
+    }
+
+    async fn get_dynamics_loss(&self) -> f64 {
+        0.
     }
 }
 
@@ -114,6 +118,7 @@ impl DriverInterface<f64, TrivialSystem> for TrivialSystemAgent {
     async fn compute_controls(
         &self,
         state_estimate: <TrivialSystem as System<f64>>::LatentState,
+        _dynamics_loss: f64,
     ) -> <TrivialSystem as System<f64>>::ControlParams {
         println!("{}", "TrivialSystemAgent::compute_controls".red());
         *self.time.lock().unwrap() = state_estimate;

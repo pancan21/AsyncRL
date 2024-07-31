@@ -7,8 +7,12 @@ authors = [
 ]
 dependencies = [
     "jax>=0.4.30",
-    "jaximal @ git+https://github.com/ArvinSKushwaha/jaximal.git",
     "jaxlib[cuda12_pip] @ https://storage.googleapis.com/jax-releases/cuda12/jaxlib-0.4.28+cuda12.cudnn89-cp312-cp312-manylinux2014_x86_64.whl",
+    "optax>=0.2.3",
+    "flashbax>=0.1.2",
+    "equinox>=0.11.4",
+    "jaximal @ git+https://github.com/ArvinSKushwaha/jaximal.git",
+    "matplotlib-backend-sixel @ git+https://github.com/ArvinSKushwaha/matplotlib-backend-sixel",
 ]
 readme = "README.md"
 requires-python = ">= 3.12"
@@ -17,7 +21,11 @@ license = { text = "MIT" }
 [tool.rye]
 managed = true
 virtual = true
-dev-dependencies = []
+dev-dependencies = [
+    "matplotlib>=3.9.1",
+    "pyqt5>=5.15.11",
+    "pycairo>=1.26.1",
+]
 
 [tool.ruff]
 target-version = "py312"

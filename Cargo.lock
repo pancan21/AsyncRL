@@ -360,13 +360,16 @@ dependencies = [
 name = "common"
 version = "0.1.0"
 dependencies = [
+ "async-std",
  "bytemuck",
+ "futures",
  "indoc",
  "itertools",
  "log",
  "num",
  "paste",
  "pyo3",
+ "smallvec",
  "thiserror",
 ]
 
@@ -1089,6 +1092,22 @@ dependencies = [
 ]
 
 [[package]]
+name = "sho"
+version = "0.1.0"
+dependencies = [
+ "async-rayon",
+ "bytemuck",
+ "color-eyre",
+ "common",
+ "coordinator",
+ "futures",
+ "num",
+ "pyo3",
+ "rayon",
+ "smol",
+]
+
+[[package]]
 name = "signal-hook-registry"
 version = "1.4.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1105,6 +1124,12 @@ checksum = "8f92a496fb766b417c996b9c5e57daf2f7ad3b0bebe1ccfca4856390e3d3bb67"
 dependencies = [
  "autocfg",
 ]
+
+[[package]]
+name = "smallvec"
+version = "1.13.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "3c5e1a9a646d36c3599cd173a41282daf47c44583ad367b8e6837255952e5c67"
 
 [[package]]
 name = "smol"

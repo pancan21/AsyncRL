@@ -1,27 +1,32 @@
 use std::ops::{Index, IndexMut};
 
+use smallvec::{SmallVec, ToSmallVec};
+
+/// The size of the [`SmallVec`] to use in [`Rope`] and [`RopeMut`].
+const SMALLVEC_LEN: usize = 4;
+
 /// A "rope" of immutable slices.
 #[derive(Debug, Clone)]
 pub struct Rope<'a, S> {
     /// Offsets into the slices.
-    offsets: Vec<usize>,
+    offsets: SmallVec<[usize; SMALLVEC_LEN]>,
     /// The immutable slices in question.
-    data: Vec<&'a [S]>,
+    data: SmallVec<[&'a [S]; SMALLVEC_LEN]>,
 }
 
 /// A "rope" of mutable slices.
 #[derive(Debug)]
 pub struct RopeMut<'a, S> {
     /// Offsets into the slices.
-    offsets: Vec<usize>,
+    offsets: SmallVec<[usize; SMALLVEC_LEN]>,
     /// The mutable slices in question.
-    data: Vec<&'a mut [S]>,
+    data: SmallVec<[&'a mut [S]; SMALLVEC_LEN]>,
 }
 
 impl<'a, S> Rope<'a, S> {
     /// Create a new [`Rope`] containing data from a vector of immutable slices.
     pub fn new(data: &[&'a [S]]) -> Self {
-        let data: Vec<&[S]> = data.to_vec();
+        let data: SmallVec<[&[S]; SMALLVEC_LEN]> = data.to_smallvec();
         Self {
             offsets: data
                 .iter()
@@ -100,6 +105,56 @@ impl<'a, S> RopeMut<'a, S> {
         self.data.extend(rope2.data);
 
         self
+    }
+
+    /// Clones the data from the slice into the underlying data in the [`RopeMut`]
+    ///
+    /// # Panics
+    /// If the slice doesn't have the same length as the [`RopeMut`].
+    pub fn clone_from_slice(&mut self, slice: &[S])
+    where
+        S: Clone,
+    {
+        assert_eq!(
+            self.len(),
+            slice.len(),
+            "Expected `self` and `slice` to have the same length but got {} and {}, respectively",
+            self.len(),
+            slice.len()
+        );
+
+        self.offsets
+            .iter()
+            .zip(self.data.iter_mut())
+            .for_each(|(&offset, data)| {
+                let len = data.len();
+                data.clone_from_slice(&slice[offset..(offset + len)])
+            })
+    }
+
+    /// Copies the data from the slice into the underlying data in the [`RopeMut`]
+    ///
+    /// # Panics
+    /// If the slice doesn't have the same length as the [`RopeMut`].
+    pub fn copy_from_slice(&mut self, slice: &[S])
+    where
+        S: Copy,
+    {
+        assert_eq!(
+            self.len(),
+            slice.len(),
+            "Expected `self` and `slice` to have the same length but got {} and {}, respectively",
+            self.len(),
+            slice.len()
+        );
+
+        self.offsets
+            .iter()
+            .zip(self.data.iter_mut())
+            .for_each(|(&offset, data)| {
+                let len = data.len();
+                data.copy_from_slice(&slice[offset..(offset + len)])
+            })
     }
 }
 

@@ -318,7 +318,7 @@ impl<T: Float, const DIMS: usize> SimulationState<T, DIMS> {
 
     /// For a given [`SimulationState`], fill the [`ObservableSimulationState`] with the observable
     /// data of the state.
-    pub fn observe(&self, observable: &mut ObservableSimulationState<T, DIMS>) {
+    pub fn observe(&self, _observable: &mut ObservableSimulationState<T, DIMS>) {
         todo!("observe")
     }
 }

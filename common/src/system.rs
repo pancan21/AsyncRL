@@ -1,11 +1,14 @@
 use crate::{
-    rope::{Rope, RopeMut}, Float
+    rope::{Rope, RopeMut},
+    Float,
 };
 
 /// Represents a non-contiguous collection of data.
 pub trait DynamicVector<S: Float> {
     /// Create `Self` by copying data from a slice of data.
-    fn copy_from_slice(&mut self, v: &[S]);
+    fn copy_from_slice(&mut self, v: &[S]) {
+        self.get_rope_mut().copy_from_slice(v);
+    }
 
     /// Get a non-contiguous rope.
     fn get_rope(&self) -> Rope<S>;
@@ -112,3 +115,24 @@ pub trait System<S: Float> {
     /// The observation of the system
     type SystemObservation: DynamicVector<S>;
 }
+
+/// Gets the associated [`System::SystemConfiguration`] for some given system.
+pub type SystemConfiguration<T, S> = <S as System<T>>::SystemConfiguration;
+
+/// Gets the associated [`System::DynamicsConfiguration`] for some given system.
+pub type DynamicsConfiguration<T, S> = <S as System<T>>::DynamicsConfiguration;
+
+/// Gets the associated [`System::SystemState`] for some given system.
+pub type SystemState<T, S> = <S as System<T>>::SystemState;
+
+/// Gets the associated [`System::LatentState`] for some given system.
+pub type LatentState<T, S> = <S as System<T>>::LatentState;
+
+/// Gets the associated [`System::ControlParams`] for some given system.
+pub type ControlParams<T, S> = <S as System<T>>::ControlParams;
+
+/// Gets the associated [`System::ControlSignal`] for some given system.
+pub type ControlSignal<T, S> = <S as System<T>>::ControlSignal;
+
+/// Gets the associated [`System::SystemObservation`] for some given system.
+pub type SystemObservation<T, S> = <S as System<T>>::SystemObservation;

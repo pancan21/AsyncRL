@@ -1,11 +1,11 @@
 use coordinator::experiment;
 use dummy_system::{
-    TrivialSystemAgent, TrivialSystemGenerator, TrivialSystemSimulator,
-    TrivialSystemState, TrivialSystemStatePredictor,
+    TrivialSystem, TrivialSystemAgent, TrivialSystemGenerator, TrivialSystemSimulator, TrivialSystemState, TrivialSystemStatePredictor
 };
 use smol::block_on;
 
 fn main() {
+    let system = TrivialSystem;
     let simulator = TrivialSystemSimulator {
         states: vec![TrivialSystemState { time: 0. }; 24].into(),
     };
@@ -17,6 +17,7 @@ fn main() {
     let state_predictor = TrivialSystemStatePredictor;
 
     block_on(experiment(
+        &system,
         driver,
         generator,
         simulator,

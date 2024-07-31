@@ -79,6 +79,7 @@ impl<T: Float, const DIMS: usize> DriverInterface<T, CoupledHarmonicOscillator<T
     async fn compute_controls(
         &self,
         state_estimate: StateTensor<T, DIMS>,
+        dynamics_loss: T,
     ) -> ControlParameterState<T, DIMS> {
         todo!()
     }

@@ -1,3 +1,10 @@
+# Build Guide
+
+Build with the following line of `bash` code:
+```bash
+cargo build --release
+```
+
 # Inference Flow
 
 ```mermaid

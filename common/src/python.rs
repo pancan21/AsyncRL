@@ -1,11 +1,13 @@
-use std::{ops::Deref, sync::OnceLock};
+use std::{fmt::{Debug, Display}, future::Future, ops::Deref, pin::Pin, sync::OnceLock};
 
 use itertools::Itertools;
 use pyo3::{
     exceptions::PyException,
-    types::{PyAnyMethods, PyDict, PyModule},
+    types::{IntoPyDict, PyAnyMethods, PyBytes, PyDict, PyModule},
     Borrowed, Bound, Py, PyAny, PyResult, Python, ToPyObject,
 };
+
+use crate::Float;
 
 /// Tries to find the appropriate Python `sys.path` at runtime.
 fn query_shim(py: Python<'_>) -> PyResult<Vec<String>> {
@@ -252,5 +254,192 @@ impl<T> UnboundGetAttrExt for Py<T> {
         value: impl ToPyObject,
     ) -> PyResult<()> {
         self.bind(py).setattr_split(attr_name, value)
+    }
+}
+
+/// A reference type to `JAX` arrays.
+pub struct JaxArray {
+    /// A Python JAX Array object.
+    obj: Py<PyAny>,
+    sleep: Option<Pin<Box<dyn Future<Output = ()>>>>,
+}
+
+impl Debug for JaxArray {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("JaxArray")
+            .field("obj", &format!("{:?}", self.obj))
+            .finish()
+    }
+}
+
+impl Display for JaxArray {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("JaxArray")
+            .field("obj", &format!("{}", self.obj))
+            .finish()
+    }
+}
+
+impl ToPyObject for JaxArray {
+    fn to_object(&self, py: Python<'_>) -> pyo3::PyObject {
+        self.obj.clone_ref(py)
+    }
+}
+
+impl JaxArray {
+    /// Constructs an instance of [`JaxArray`] from a Python object.
+    ///
+    /// # Panics
+    /// When the given object is not an instance of `jax.Array`.
+    pub fn new(py_obj: Py<PyAny>) -> Self {
+        Python::with_gil_ext(|py| -> PyResult<JaxArray> {
+            let array_type = py.import_bound("jax")?.getattr_split("Array")?;
+
+            assert!(
+                py_obj.bind(py).is_instance(&array_type)?,
+                "Given python object {py_obj} is not an instance of {array_type}"
+            );
+
+            Ok(JaxArray { obj: py_obj, sleep: None })
+        })
+        .unwrap()
+    }
+
+    /// Constructs an instance of [`JaxArray`] from a Rust collection
+    pub fn new_1d<T: Float>(data: Vec<T>) -> Self {
+        Python::with_gil_ext(|py| -> PyResult<JaxArray> {
+            let byteslice = bytemuck::cast_slice::<_, u8>(&data[..]);
+            let pybytes = PyBytes::new_bound(py, byteslice);
+
+            let array = py
+                .import_bound("array")?
+                .getattr("array")?
+                .call1((T::float_type().r#type(), pybytes))?;
+
+            let obj = JAX
+                .bind(py)
+                .getattr_split("numpy.array")?
+                .call(
+                    (array,),
+                    Some(&[("dtype", T::float_type().jax())].into_py_dict_bound(py)),
+                )?
+                .unbind();
+
+            Ok(JaxArray { obj, sleep: None })
+        })
+        .unwrap()
+    }
+
+    /// Gets inner [`Py<PyAny>`].
+    pub fn into_inner(self) -> Py<PyAny> {
+        self.obj
+    }
+
+    /// Clones array
+    pub fn clone_ref(&self, py: Python<'_>) -> JaxArray {
+        JaxArray {
+            obj: self.obj.clone_ref(py),
+            sleep: None,
+        }
+    }
+}
+
+impl Future for JaxArray {
+    type Output = JaxArray;
+
+    fn poll(
+        self: std::pin::Pin<&mut Self>,
+        cx: &mut std::task::Context<'_>,
+    ) -> std::task::Poll<Self::Output> {
+        Python::with_gil_ext(|py| {
+            if self
+                .obj
+                .bind(py)
+                .call_method0("is_ready")
+                .expect("This doesn't have an is_ready function...")
+                .extract::<bool>()
+                .expect("Didn't get a boolean value.")
+            {
+                std::task::Poll::Ready(self.clone_ref(py))
+            } else {
+                cx.waker().wake_by_ref();
+                std::task::Poll::Pending
+            }
+        })
+    }
+}
+
+/// A reference type to `JAX` keys.
+pub struct JaxKey {
+    /// A Python JAX PRNGKey object.
+    key: Py<PyAny>,
+}
+
+impl ToPyObject for JaxKey {
+    fn to_object(&self, py: Python<'_>) -> pyo3::PyObject {
+        self.key.clone_ref(py)
+    }
+}
+
+impl JaxKey {
+    /// Constructs an instance of [`JaxKey`] from a Python object.
+    ///
+    /// # Panics
+    /// When the given object is not an instance of `jax.Array`.
+    pub fn new(py_obj: Py<PyAny>) -> Self {
+        Python::with_gil_ext(|py| -> PyResult<JaxKey> {
+            let array_type = JAX.bind(py).getattr_split("Array")?;
+
+            assert!(
+                py_obj.bind(py).is_instance(&array_type)?,
+                "Given python object {py_obj} is not an instance of {array_type}"
+            );
+
+            Ok(JaxKey { key: py_obj })
+        })
+        .unwrap()
+    }
+
+    /// Constructs an instance of [`JaxKey`] from a seed.
+    pub fn key(seed: i64) -> Self {
+        Python::with_gil_ext(|py| -> PyResult<Self> {
+            let key = JAX
+                .bind(py)
+                .getattr("random")?
+                .call_method1("key", (seed,))?
+                .unbind();
+
+            Ok(Self { key })
+        })
+        .inspect_err(|err| {
+            dbg!(err);
+        })
+        .unwrap_or_else(|_| panic!("Tried to make JaxKey with seed {seed}"))
+    }
+
+    /// Constructs two instances of [`JaxKey`] from one.
+    pub fn split<const N: usize>(&self) -> [Self; N] {
+        Python::with_gil_ext(|py| -> PyResult<[Self; N]> {
+            let keys = JAX
+                .bind(py)
+                .getattr("random")?
+                .call_method1("split", (self.key.bind(py),))?
+                .extract::<[Py<PyAny>; N]>()?;
+
+            Ok(keys.map(|key| JaxKey { key }))
+        })
+        .unwrap_or_else(|_| unreachable!())
+    }
+
+    /// Gets inner [`Py<PyAny>`].
+    pub fn into_inner(self) -> Py<PyAny> {
+        self.key
+    }
+
+    /// Clones array
+    pub fn clone_ref(&self, py: Python<'_>) -> JaxKey {
+        JaxKey {
+            key: self.key.clone_ref(py),
+        }
     }
 }

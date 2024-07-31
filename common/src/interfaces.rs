@@ -5,7 +5,11 @@ use crate::{system::System, Float};
 /// The interface for an agent driving our dynamical system.
 pub trait DriverInterface<T: Float, S: System<T>> {
     /// For a state estimate, computes the control parameters that should be associated with it.
-    async fn compute_controls(&self, state_estimate: S::LatentState) -> S::ControlParams;
+    async fn compute_controls(
+        &self,
+        state_estimate: S::LatentState,
+        dynamics_loss: T,
+    ) -> S::ControlParams;
 }
 
 /// The interface for an agent driving our dynamical system.
@@ -23,7 +27,10 @@ pub trait SimulatorInterface<T: Float, S: System<T>> {
     async fn get_observations(&self) -> Vec<S::SystemObservation>;
 
     /// Updates the state of the system by the given timestep.
-    async fn update(&mut self, dt: T, control_signal: &S::ControlSignal);
+    async fn update(&mut self, system: &S, dt: T, control_signal: &S::ControlSignal);
+
+    /// Compute the "goodness" of the dynamics thus far.
+    async fn get_dynamics_loss(&self) -> T;
 
     /// Gets the current time of the system state.
     fn get_time(&self) -> T;

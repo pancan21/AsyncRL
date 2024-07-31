@@ -27,6 +27,7 @@ pub async fn experiment<
     SIM: SimulatorInterface<T, S>,
     SP: StatePredictionInterface<T, S>,
 >(
+    system: &S,
     driver: D,
     mut generator: G,
     mut simulator: SIM,
@@ -37,17 +38,24 @@ pub async fn experiment<
 ) {
     let mut current_query = None;
     let mut in_progress = None;
-    let future_in_progress = |query| Box::pin(driver.compute_controls(query).fuse());
+    let future_in_progress =
+        |query, dynamics_loss| Box::pin(driver.compute_controls(query, dynamics_loss).fuse());
 
+    let mut i = 0;
     loop {
+        i += 1;
+        if i % 100 == 0 {
+            println!("{i}");
+        }
+
         let observations = simulator.get_observations().await;
 
         let current_state_estimate = state_predictor.predict_state(&observations).await;
-        current_query.replace(current_state_estimate);
+        current_query.replace((current_state_estimate, simulator.get_dynamics_loss().await));
 
         if in_progress.is_none() {
-            if let Some(current_query) = current_query.take() {
-                in_progress.replace(future_in_progress(current_query));
+            if let Some((current_query, dynamics_loss)) = current_query.take() {
+                in_progress.replace(future_in_progress(current_query, dynamics_loss));
             }
         }
 
@@ -55,7 +63,7 @@ pub async fn experiment<
             let signal = generator.control_signal(simulator.get_time());
             futures::select! {
                 controls = in_progress_future => generator.set_parameters(controls, simulator.get_time()).await,
-                _ = simulator.update(dt, &signal).fuse() => {
+                _ = simulator.update(system, dt, &signal).fuse() => {
                     in_progress.replace(in_progress_future);
                 },
             };

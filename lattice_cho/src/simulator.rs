@@ -1,7 +1,9 @@
 use common::{interfaces::SimulatorInterface, vector::Vector, Float};
 
 use crate::system::{
-    deindex, index, ControlParameterState, ControlSignalState, CoupledHarmonicOscillator, ObservableSimulationState, ObservableState, Observation, SimulationConfig, SimulationState, DELAY_DEPTH
+    deindex, index, ControlSignalState, CoupledHarmonicOscillator,
+    ObservableSimulationState, ObservableState, Observation, SimulationConfig, SimulationState,
+    DELAY_DEPTH,
 };
 use rayon::prelude::*;
 
@@ -116,7 +118,12 @@ impl<T: Float + Send + Sync, const DIMS: usize>
 
     /// The update function here uses [Verlet
     /// integration](https://en.wikipedia.org/wiki/Verlet_integration#Velocity_Verlet)
-    async fn update(&mut self, dt: T, control_signal: &ControlSignalState<T, DIMS>) {
+    async fn update(
+        &mut self,
+        _system: &CoupledHarmonicOscillator<T, DIMS>,
+        dt: T,
+        _control_signal: &ControlSignalState<T, DIMS>,
+    ) {
         let next_offset = (self.offset + 1) % (DELAY_DEPTH + 1);
         let (tx, rx) = futures::channel::oneshot::channel();
 
@@ -140,6 +147,10 @@ impl<T: Float + Send + Sync, const DIMS: usize>
 
     fn get_time(&self) -> T {
         self.simulation_states[self.offset].time
+    }
+
+    async fn get_dynamics_loss(&self) -> T {
+        T::zero()
     }
 }
 
