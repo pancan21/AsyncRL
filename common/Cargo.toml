@@ -9,7 +9,7 @@ thiserror = "1"
 num = "0.4.3"
 paste = "1.0.15"
 itertools = "0.13.0"
-pyo3 = { version ="0.22", features = ["abi3-py312"]}
+pyo3 = {version = "0.22", features = ["abi3-py312"], default-features = false}
 indoc = "2"
 log = "0.4"
 smallvec = "1.13.2"

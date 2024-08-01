@@ -23,8 +23,6 @@ managed = true
 virtual = true
 dev-dependencies = [
     "matplotlib>=3.9.1",
-    "pyqt5>=5.15.11",
-    "pycairo>=1.26.1",
 ]
 
 [tool.ruff]

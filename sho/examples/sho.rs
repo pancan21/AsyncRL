@@ -13,7 +13,7 @@ fn main() -> color_eyre::Result<()> {
     let key = JaxKey::key(112045);
     let system = SimpleHarmonicOscillator {
         stiffness: 1.0f32,
-        gamma: 1. - 1e-5,
+        gamma: 1.1,
     };
     let simulator = SHOSimulator::new(&system);
     let generator = SHOGenerator::new(&system);
@@ -28,7 +28,7 @@ fn main() -> color_eyre::Result<()> {
         generator,
         simulator,
         state_predictor,
-        1e-3,
+        1e-2,
     ));
 
     Ok(())

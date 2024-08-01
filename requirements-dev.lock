@@ -7,6 +7,7 @@
 #   all-features: false
 #   with-sources: false
 #   generate-hashes: false
+#   universal: false
 
 absl-py==2.1.0
     # via chex
@@ -123,16 +124,10 @@ pillow==10.4.0
     # via matplotlib
 protobuf==5.27.2
     # via orbax-checkpoint
-pycairo==1.26.1
 pygments==2.18.0
     # via rich
 pyparsing==3.1.2
     # via matplotlib
-pyqt5==5.15.11
-pyqt5-qt5==5.15.14
-    # via pyqt5
-pyqt5-sip==12.15.0
-    # via pyqt5
 python-dateutil==2.9.0.post0
     # via matplotlib
 pyyaml==6.0.1

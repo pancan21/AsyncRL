@@ -11,4 +11,4 @@ bytemuck = "1"
 
 [dev-dependencies]
 lattice_cho = { path = "../lattice_cho" }
-pyo3 = { version = "0.22", features = ["abi3-py312"] }
+pyo3 = "0.22"
