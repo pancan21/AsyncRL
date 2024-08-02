@@ -3,4 +3,6 @@
 [Introduction](./introduction.md)
 
 - [Instructions](./instructions.md)
-- [Design Schematics](./design_schematics.md)
+- [Approach](./approach.md)
+
+[Design Schematics](./design_schematics.md)
