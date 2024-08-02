@@ -1,3 +1,0 @@
-[build]
-target-dir = "target"
-rustflags = ["-L", "/datapool/homes/gs112155/.rye/py/cpython@3.12.3/lib/"]
