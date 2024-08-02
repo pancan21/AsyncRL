@@ -1,0 +1,27 @@
+[book]
+authors = ["Arvin Kushwaha"]
+language = "en"
+multilingual = false
+src = "src"
+title = "Asynchronous Reinforcement Learning for Partially Observable Dynamical Systems"
+
+[output.html]
+mathjax-support = true
+additional-js = ["mermaid.min.js", "mermaid-init.js"]
+
+[output.html.font]
+enable = true
+woff = true
+ttf = true
+copy-fonts = true
+
+[output.html.code.hidelines]
+python = "~"
+
+[preprocessor.katex]
+after = ["links"]
+
+[preprocessor.mermaid]
+command = "mdbook-mermaid"
+
+[preprocessor.alerts]
