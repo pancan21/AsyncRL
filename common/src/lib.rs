@@ -41,6 +41,9 @@ pub mod vector;
 /// data.
 pub mod rope;
 
+/// This module ties together all the interfaces into an experiment.
+pub mod coordinator;
+
 /// The type of [`Float`]
 #[derive(Debug, Copy, Clone)]
 pub enum FloatType {

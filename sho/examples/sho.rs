@@ -1,5 +1,4 @@
-use common::python::JaxKey;
-use coordinator::experiment;
+use common::{coordinator::experiment, python::JaxKey};
 use sho::{
     driver::SHOAgent, generator::SHOGenerator, simulator::SHOSimulator,
     state_estimator::SHOStatePredictor, system::SimpleHarmonicOscillator,

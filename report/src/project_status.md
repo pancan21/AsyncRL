@@ -1,0 +1,4 @@
+# Project Status
+
+- [ ] Win
+- [ ] Lose

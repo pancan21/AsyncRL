@@ -1,4 +1,4 @@
-use coordinator::experiment;
+use common::coordinator::experiment;
 use dummy_system::{
     TrivialSystem, TrivialSystemAgent, TrivialSystemGenerator, TrivialSystemSimulator, TrivialSystemState, TrivialSystemStatePredictor
 };

@@ -1,13 +1,4 @@
-#![forbid(
-    missing_docs,
-    clippy::missing_assert_message,
-    clippy::missing_docs_in_private_items,
-    clippy::missing_asserts_for_indexing,
-    clippy::missing_panics_doc
-)]
-//! This module ties together all the interfaces into an experiment.
-
-use common::{
+use crate::{
     interfaces::{
         DriverInterface, GeneratorInterface, SimulatorInterface, StatePredictionInterface,
     },
