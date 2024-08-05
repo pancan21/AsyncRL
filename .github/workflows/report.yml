@@ -29,22 +29,27 @@ jobs:
         with:
           toolchain: stable
           profile: minimal
-      # Cache installation assets
-      - name: Cache cargo registry
-        uses: actions/cache@v1
+      - name: Cache Cargo
+        uses: Swatinem/rust-cache@v2
         with:
-          path: ~/.cargo/registry
-          key: ${{ runner.os }}-cargo-registry-${{ hashFiles('**/Cargo.lock') }}
-      - name: Cache cargo index
-        uses: actions/cache@v1
-        with:
-          path: ~/.cargo/git
-          key: ${{ runner.os }}-cargo-index-${{ hashFiles('**/Cargo.lock') }}
-      - name: Cache cargo build
-        uses: actions/cache@v1
-        with:
-          path: target
-          key: ${{ runner.os }}-cargo-build-target-${{ hashFiles('**/Cargo.lock') }}
+          cache-all-crates: "true"
+
+      # # Cache installation assets
+      # - name: Cache cargo registry
+      #   uses: actions/cache@v1
+      #   with:
+      #     path: ~/.cargo/registry
+      #     key: ${{ runner.os }}-cargo-registry-${{ hashFiles('**/Cargo.lock') }}
+      # - name: Cache cargo index
+      #   uses: actions/cache@v1
+      #   with:
+      #     path: ~/.cargo/git
+      #     key: ${{ runner.os }}-cargo-index-${{ hashFiles('**/Cargo.lock') }}
+      # - name: Cache cargo build
+      #   uses: actions/cache@v1
+      #   with:
+      #     path: target
+      #     key: ${{ runner.os }}-cargo-build-target-${{ hashFiles('**/Cargo.lock') }}
       - name: Install mdbook and plugins
         uses: actions-rs/cargo@v1
         with:
