@@ -383,18 +383,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "coordinator"
-version = "0.1.0"
-dependencies = [
- "bytemuck",
- "common",
- "futures",
- "lattice_cho",
- "num",
- "pyo3",
-]
-
-[[package]]
 name = "crossbeam-deque"
 version = "0.8.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -426,7 +414,6 @@ dependencies = [
  "async-std",
  "colored",
  "common",
- "coordinator",
  "futures",
  "smol",
 ]
@@ -1099,7 +1086,6 @@ dependencies = [
  "bytemuck",
  "color-eyre",
  "common",
- "coordinator",
  "futures",
  "num",
  "pyo3",

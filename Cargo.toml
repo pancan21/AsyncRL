@@ -1,4 +1,4 @@
 [workspace]
-members = ["common", "coordinator", "dummy_system", "lattice_cho", "sho"]
+members = ["common", "dummy_system", "lattice_cho", "sho"]
 resolver = "2"
 

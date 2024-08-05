@@ -1,7 +1,7 @@
 [project]
-name = "coordinated"
+name = "asyncrl"
 version = "0.1.0"
-description = "Add your description here"
+description = "Asynchronous Reinforcement Learning"
 authors = [
     { name = "Arvin Kushwaha", email = "arvin.singh.kushwaha@gmail.com" }
 ]

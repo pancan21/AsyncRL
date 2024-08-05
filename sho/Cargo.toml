@@ -12,5 +12,4 @@ rayon = "1.10.0"
 num = "*"
 bytemuck = "1"
 pyo3 = "0.22"
-coordinator = { path = "../coordinator" }
 smol = "2"
