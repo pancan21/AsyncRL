@@ -13,7 +13,7 @@ pub struct SHOSimulator<T: Float> {
     controls: [SHOControlSignal<T>; DELAY_DEPTH + 1],
     /// The offset of the current state.
     offset: usize,
-
+    /// The file to write records to.
     file: File,
 }
 
@@ -96,10 +96,6 @@ impl<T: Float> SimulatorInterface<T, SimpleHarmonicOscillator<T>> for SHOSimulat
             .await;
         self.offset = next_offset;
 
-        if self.offset == 0 {
-            self.file.flush().await;
-        }
-
         println!("{}", self.states[self.offset].position.map(|i| i * i).sum())
     }
 
@@ -110,5 +106,11 @@ impl<T: Float> SimulatorInterface<T, SimpleHarmonicOscillator<T>> for SHOSimulat
     async fn get_dynamics_loss(&self) -> T {
         (self.states[self.offset].position.map(|i| i * i).sum() - T::one())
             .powf(T::one() + T::one())
+    }
+}
+
+impl<T: Float> Drop for SHOSimulator<T> {
+    fn drop(&mut self) {
+        smol::block_on(self.file.flush());
     }
 }
