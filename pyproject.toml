@@ -13,6 +13,7 @@ dependencies = [
     "equinox>=0.11.4",
     "jaximal @ git+https://github.com/ArvinSKushwaha/jaximal.git",
     "matplotlib-backend-sixel @ git+https://github.com/ArvinSKushwaha/matplotlib-backend-sixel",
+    "matplotlib>=3.9.1.post1",
 ]
 readme = "README.md"
 requires-python = ">= 3.12"
